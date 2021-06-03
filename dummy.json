@@ -1,0 +1,31 @@
+{
+    "_id": {
+        "$oid": "60b8497539c6522a8c5874e7"
+    },
+    "statename": null,
+    "cities": [
+        {
+            "cityname": "Jogulamba Gadwal",
+            "taluks": [
+                {
+                    "talukname": "Gadwal",
+                    "pincode": 509133,
+                    "longitude": "NA",
+                    "latitude": "NA"
+                },
+                {
+                    "talukname": "Dharur",
+                    "pincode": 509133,
+                    "longitude": "NA",
+                    "latitude": "NA"
+                },
+                {
+                    "talukname": "Nagaon",
+                    "pincode": 782128,
+                    "longitude": "NA",
+                    "latitude": "NA"
+                }
+            ]
+        }
+    ]
+}
