@@ -1,53 +1,51 @@
 const path = require("path");
 const fs = require("fs");
-const data = "./all_india_PO_list_without_APS_offices_ver2_lat_long.json";
+const dataPath =
+  "D:\\Cargo-Flo\\Docs\\all_india_PO_list_without_APS_offices_ver2_lat_long.json";
 const stateData = "./states.json";
+const fetchUrl =
+  "https://api.data.gov.in/resource/04cbe4b1-2f2b-4c39-a1d5-1c2e28bc0e32?api-key=579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b&format=json&offset=0&limit=20000";
 
-const jsonData = JSON.parse(
-  fs.readFileSync(path.join(__dirname, data), "utf-8")
+var jsonData = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+const states = JSON.parse(
+  fs.readFileSync(path.join(__dirname, stateData), "utf-8")
 );
 
-/**
- * DATA FORMAT
- *
- * states = [{
- *      statename: "",
- *      cities: [{
- *              cityname: "",
- *              regions: [{
- *              regionname: "",
- *              divisionname: "",
- *              talukname: "",
- *              pincode: 123,
- *              longitue: 12.12123,
- *              latitude: 34.1231,
- *          }]
- *      }]
- *  }]
- *
- */
+// local
+executeProcess();
 
-const notRequired = [
-  "officename",
-  "officeType",
-  "Deliverystatus",
-  "Related Suboffice",
-  "Related Headoffice",
-  "Telephone",
-  "circlename",
-];
+// server
+// fetchFromServer();
 
-const states =
-  JSON.parse(fs.readFileSync(path.join(__dirname, stateData), "utf-8")) || [];
-
-jsonData.forEach((jd) => {
-  notRequired.forEach((nr) => {
-    delete jd[nr];
+function fetchFromServer() {
+  console.info("Fetching data from server...");
+  var request = require("request");
+  var options = {
+    method: "GET",
+    url: fetchUrl,
+  };
+  request(options, function (error, response) {
+    if (error) throw new Error(error);
+    jsonData = JSON.parse(response.body);
+    jsonData = jsonData.records;
+    executeProcess(jsonData);
   });
-  addState(jd);
-  addCity(jd);
-  addTaluk(jd);
-});
+}
+
+function executeProcess() {
+  jsonData.forEach((jd) => {
+    let d = {};
+    for (const k in jd) {
+      d[k.toLocaleLowerCase()] = jd[k];
+    }
+    addState(d);
+    addCity(d);
+    addtaluk(d);
+  });
+
+  console.log(states);
+  fs.writeFileSync(path.join(__dirname, "states.json"), JSON.stringify(states));
+}
 
 function addState(data) {
   // check if empty
@@ -73,20 +71,20 @@ function addCity(data) {
   }
 
   // check for existing city
-  if (!state.cities.some((c) => c.cityname == data.Districtname)) {
-    states[stateIndex].cities.push({ cityname: data.Districtname });
-    console.info(data.Districtname, "city added.");
+  if (!state.cities.some((c) => c.cityname == data.districtname)) {
+    states[stateIndex].cities.push({ cityname: data.districtname });
+    console.info(data.districtname, "city added.");
   } else {
-    addTaluk(data);
+    addtaluk(data);
   }
 }
 
-function addTaluk(data) {
+function addtaluk(data) {
   const state = states.find((s) => s.statename == data.statename);
   const stateIndex = states.findIndex((s) => s.statename == data.statename);
-  const city = state.cities.find((c) => c.cityname == data.Districtname);
+  const city = state.cities.find((c) => c.cityname == data.districtname);
   const cityIndex = state.cities.findIndex(
-    (c) => c.cityname == data.Districtname
+    (c) => c.cityname == data.districtname
   );
 
   // check if empty
@@ -97,22 +95,39 @@ function addTaluk(data) {
   //   check for exstin taluk
   if (
     !states[stateIndex].cities[cityIndex].regions.some(
-      (t) => t.talukname == data.Taluk
+      (t) => t.talukname == data.taluk
     )
   ) {
     states[stateIndex].cities[cityIndex].regions.push({
-      talukname: data.Taluk,
+      talukname: data.taluk,
       regionname: data.regionname,
       divisionname: data.divisionname,
       pincode: data.pincode,
       longitude: data.longitude,
       latitude: data.latitude,
     });
-    console.info(data.Taluk, "taluk added.");
+    console.info(data.taluk, "taluk added.");
   } else {
-    // console.log("Taluk exists.");
+    // console.log("taluk exists.");
   }
 }
 
-console.log(states);
-fs.writeFileSync(path.join(__dirname, "states.json"), JSON.stringify(states));
+/**
+ * DATA FORMAT
+ *
+ * states = [{
+ *      statename: "",
+ *      cities: [{
+ *              cityname: "",
+ *              regions: [{
+ *              regionname: "",
+ *              divisionname: "",
+ *              talukname: "",
+ *              pincode: 123,
+ *              longitue: 12.12123,
+ *              latitude: 34.1231,
+ *          }]
+ *      }]
+ *  }]
+ *
+ */
